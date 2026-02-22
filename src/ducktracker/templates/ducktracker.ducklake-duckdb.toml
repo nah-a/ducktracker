@@ -1,0 +1,13 @@
+[connection]
+catalog_name = "my_catalog"
+catalog_backend = "duckdb"
+duckdb_metadata_path = "ducklake_metadata.db"
+# secret_directory = "/path/to/secrets"
+
+[migrations]
+directory = "migrations"
+schema_history_table = "ducktracker_schema_history"
+target_schema = "main"
+
+[behavior]
+validate_on_migrate = true

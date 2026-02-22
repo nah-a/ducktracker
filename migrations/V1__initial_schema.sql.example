@@ -1,0 +1,16 @@
+-- Create the initial schema for the application.
+-- Rename this file to V1__initial_schema.sql to use it.
+
+CREATE TABLE main.users (
+    id INTEGER,
+    name VARCHAR NOT NULL,
+    email VARCHAR,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE main.orders (
+    id INTEGER,
+    user_id INTEGER NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP
+);

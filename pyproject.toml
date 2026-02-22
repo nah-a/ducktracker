@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ducktracker"
+version = "0.1.0"
+description = "DDL migration and schema drift detection for DuckLake and pg_duckdb"
+requires-python = ">=3.12"
+license = "MIT"
+readme = "README.md"
+authors = [
+  { name = "ducktracker contributors" }
+]
+dependencies = [
+    "click>=8.1",
+    "duckdb>=1.2",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.9",
+]
+
+[project.scripts]
+ducktracker = "ducktracker.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ducktracker" = ["templates/*", "templates/.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
