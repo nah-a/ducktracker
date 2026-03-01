@@ -188,3 +188,15 @@ def test_bool_env_coercion_false_for_other_values(monkeypatch):
     monkeypatch.setenv("DUCKTRACKER_OUT_OF_ORDER", "no")
     cfg = load_config(config_path="/nonexistent/path.toml")
     assert cfg.out_of_order is False
+
+
+def test_read_only_from_env_true(monkeypatch):
+    monkeypatch.setenv("DUCKTRACKER_READ_ONLY", "true")
+    cfg = load_config(config_path="/nonexistent/path.toml")
+    assert cfg.read_only is True
+
+
+def test_read_only_from_env_false(monkeypatch):
+    monkeypatch.setenv("DUCKTRACKER_READ_ONLY", "false")
+    cfg = load_config(config_path="/nonexistent/path.toml")
+    assert cfg.read_only is False

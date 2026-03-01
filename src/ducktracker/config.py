@@ -65,6 +65,7 @@ _ENV_FIELD_MAP: dict[str, str] = {
     "DUCKDB_METADATA_PATH": "duckdb_metadata_path",
     "POSTGRES_CONNECTION": "postgres_connection",
     "DATA_PATH": "data_path",
+    "READ_ONLY": "read_only",
     "SECRET_NAME": "secret_name",
     "SECRET_DIRECTORY": "secret_directory",
     "EXTENSIONS_PATH": "extensions_path",
