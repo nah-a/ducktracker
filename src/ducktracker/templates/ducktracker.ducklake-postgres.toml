@@ -1,0 +1,17 @@
+[connection]
+catalog_name = "my_catalog"
+catalog_backend = "postgres"
+# postgres_connection = "dbname=my_catalog host=localhost port=5432 user=postgres"
+# Override via environment variable: DUCKTRACKER_POSTGRES_CONNECTION
+
+# secret_directory = "/path/to/secrets"
+
+[migrations]
+directory = "migrations"
+schema_history_table = "ducktracker_schema_history"
+# "main" is the DuckLake schema namespace as seen through DuckDB — not the PostgreSQL "public" schema.
+# DuckLake exposes its catalog via DuckDB, which uses "main" as the default schema name.
+target_schema = "main"
+
+[behavior]
+validate_on_migrate = true

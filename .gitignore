@@ -1,0 +1,18 @@
+**/*.egg-info
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+
+dist/
+build/
+.venv/
+*.pyc
+.env
+
+*.db
+*.db.wal
+*.duckdb
+*.duckdb.wal
+
+# Worktrees
+.worktrees/

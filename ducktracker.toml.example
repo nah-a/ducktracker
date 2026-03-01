@@ -1,0 +1,35 @@
+[connection]
+catalog_name = "my_ducklake"
+
+# Backend: "duckdb" (default, no PostgreSQL needed) or "postgres"
+catalog_backend = "duckdb"
+
+# DuckDB backend — local metadata file, great for local development
+duckdb_metadata_path = "ducklake_metadata.db"
+
+# PostgreSQL backend — shared metadata catalog for team/production
+# catalog_backend = "postgres"
+# postgres_connection = "dbname=ducklake_catalog host=localhost port=5432 user=ducklake"
+
+# Optional: override where DuckLake stores Parquet data files
+# data_path = "/data/ducklake/"
+
+# Optional: use a named DuckDB secret as the catalog connection
+# (replaces duckdb_metadata_path / postgres_connection when set)
+# secret_name = "my_ducklake_secret"
+
+# Optional: directory where DuckDB looks for persistent named secrets
+# (defaults to ~/.duckdb/stored_secrets/ when unset)
+# secret_directory = "/run/secrets/duckdb"
+
+# Optional: install DuckDB extensions from a local directory instead of the internet
+# extensions_path = "/opt/duckdb/extensions"
+
+[migrations]
+directory = "migrations"
+schema_history_table = "ducktracker_schema_history"
+target_schema = "main"
+
+[behavior]
+validate_on_migrate = true
+out_of_order = false

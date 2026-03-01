@@ -1,0 +1,3 @@
+# DuckDB local metadata files — do not commit local dev state
+*.db
+*.db.wal
