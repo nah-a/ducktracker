@@ -11,9 +11,7 @@ from ducktracker.models import (
     MacroInfo,
     SchemaSnapshot,
     SequenceInfo,
-    StoredProcedureInfo,
     TableInfo,
-    TriggerInfo,
     ViewInfo,
 )
 
@@ -32,8 +30,6 @@ def detect_drift(
     items.extend(_compare_indexes(expected.indexes, actual.indexes))
     items.extend(_compare_sequences(expected.sequences, actual.sequences))
     items.extend(_compare_macros(expected.macros, actual.macros))
-    items.extend(_compare_stored_procedures(expected.stored_procedures, actual.stored_procedures))
-    items.extend(_compare_triggers(expected.triggers, actual.triggers))
 
     return DriftReport(
         catalog_name=catalog_name,
@@ -249,66 +245,6 @@ def _compare_macros(
             items.append(
                 DriftItem("macro", fqn, "modified", em.definition, am.definition, f"Macro {fqn} definition changed")
             )
-
-    return items
-
-
-def _compare_stored_procedures(
-    expected: tuple[StoredProcedureInfo, ...],
-    actual: tuple[StoredProcedureInfo, ...],
-) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(p.schema_name, p.name): p for p in expected}
-    act_map = {(p.schema_name, p.name): p for p in actual}
-
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem(
-            "stored_procedure", fqn, "added", None, fqn,
-            f"Stored procedure {fqn} exists in live but not in snapshot",
-        ))
-
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem(
-            "stored_procedure", fqn, "removed", fqn, None,
-            f"Stored procedure {fqn} exists in snapshot but not in live",
-        ))
-
-    for key in sorted(set(exp_map) & set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        ep, ap = exp_map[key], act_map[key]
-        if _normalize_whitespace(ep.definition) != _normalize_whitespace(ap.definition):
-            items.append(DriftItem(
-                "stored_procedure", fqn, "modified", ep.definition, ap.definition,
-                f"Stored procedure {fqn} definition changed",
-            )
-            )
-
-    return items
-
-
-def _compare_triggers(
-    expected: tuple[TriggerInfo, ...],
-    actual: tuple[TriggerInfo, ...],
-) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(t.schema_name, t.table_name, t.trigger_name): t for t in expected}
-    act_map = {(t.schema_name, t.table_name, t.trigger_name): t for t in actual}
-
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[2]}"
-        items.append(DriftItem(
-            "trigger", fqn, "added", None, fqn,
-            f"Trigger {fqn} on {key[1]} exists in live but not in snapshot",
-        ))
-
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[2]}"
-        items.append(DriftItem(
-            "trigger", fqn, "removed", fqn, None,
-            f"Trigger {fqn} on {key[1]} exists in snapshot but not in live",
-        ))
 
     return items
 

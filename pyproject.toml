@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ducktracker"
 version = "0.1.0"
-description = "DDL migration and schema drift detection for DuckLake and pg_duckdb"
+description = "DDL migration and schema drift detection for DuckLake"
 requires-python = ">=3.12"
 license = "MIT"
 readme = "README.md"

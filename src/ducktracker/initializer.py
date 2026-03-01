@@ -8,7 +8,6 @@ from pathlib import Path
 _BACKEND_TEMPLATES: dict[str, str] = {
     "ducklake-duckdb": "ducktracker.ducklake-duckdb.toml",
     "ducklake-postgres": "ducktracker.ducklake-postgres.toml",
-    "pg-duckdb": "ducktracker.pg-duckdb.toml",
 }
 
 

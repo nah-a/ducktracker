@@ -35,7 +35,7 @@ def _truncate(s: str, max_len: int = 12) -> str:
 @click.option("--config", "-c", type=click.Path(exists=True), default=None, help="Path to ducktracker.toml.")
 @click.option("--catalog", default=None, help="DuckLake catalog name (overrides config).")
 @click.option(
-    "--backend", default=None, type=click.Choice(["duckdb", "postgres", "pg_duckdb"]), help="Catalog backend type."
+    "--backend", default=None, type=click.Choice(["duckdb", "postgres"]), help="Catalog backend type."
 )
 @click.option("--metadata", default=None, help="DuckDB metadata file path (for duckdb backend).")
 @click.option("--connection", default=None, help="PostgreSQL connection string (for postgres backend).")
@@ -50,7 +50,7 @@ def cli(
     connection: str | None,
     secrets_dir: str | None,
 ) -> None:
-    """ducktracker: DDL migration and schema drift detection for DuckLake and PostgreSQL."""
+    """ducktracker: DDL migration and schema drift detection for DuckLake."""
     ctx.ensure_object(dict)
     overrides: dict[str, str] = {}
     if catalog:
@@ -204,10 +204,7 @@ def drift(ctx: click.Context) -> None:
             ctx.exit(1)
 
         exclude = frozenset({cfg.schema_history_table})
-        kwargs = {}
-        if cfg.catalog_backend == "pg_duckdb":
-            kwargs["schema_filter"] = cfg.target_schema
-        actual = introspector.introspect(conn, cfg.catalog_name, exclude_tables=exclude, **kwargs)
+        actual = introspector.introspect(conn, cfg.catalog_name, exclude_tables=exclude)
 
         # Determine snapshot version from applied migrations
         applied = history.get_applied_migrations(conn, cfg.catalog_name, cfg.target_schema, cfg.schema_history_table)
@@ -263,10 +260,7 @@ def baseline(ctx: click.Context, version: int, description: str) -> None:
 
         # Capture current state as snapshot
         exclude = frozenset({cfg.schema_history_table})
-        kwargs = {}
-        if cfg.catalog_backend == "pg_duckdb":
-            kwargs["schema_filter"] = cfg.target_schema
-        snapshot = introspector.introspect(conn, cfg.catalog_name, exclude_tables=exclude, **kwargs)
+        snapshot = introspector.introspect(conn, cfg.catalog_name, exclude_tables=exclude)
 
         history.record_baseline(
             conn=conn,
@@ -296,9 +290,9 @@ def create(ctx: click.Context, description: str, repeatable: bool) -> None:
 @click.argument("path", default=".", type=click.Path(file_okay=False))
 @click.option(
     "--backend",
-    type=click.Choice(["ducklake-duckdb", "ducklake-postgres", "pg-duckdb"]),
+    type=click.Choice(["ducklake-duckdb", "ducklake-postgres"]),
     default=None,
-    help="Backend type: ducklake-duckdb, ducklake-postgres, or pg-duckdb.",
+    help="Backend type: ducklake-duckdb or ducklake-postgres.",
 )
 @click.pass_context
 def init(ctx: click.Context, path: str, backend: str | None) -> None:
@@ -315,7 +309,7 @@ def init(ctx: click.Context, path: str, backend: str | None) -> None:
     if backend is None:
         backend = click.prompt(
             "Select a backend",
-            type=click.Choice(["ducklake-duckdb", "ducklake-postgres", "pg-duckdb"]),
+            type=click.Choice(["ducklake-duckdb", "ducklake-postgres"]),
         )
 
     try:

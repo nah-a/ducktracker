@@ -18,7 +18,7 @@ def test_connect_sets_secret_directory():
 
     with mock_patch("duckdb.connect", return_value=conn_mock), \
          mock_patch("ducktracker.connection._setup_extensions"), \
-         mock_patch("ducktracker.connection._attach_catalog"):
+         mock_patch("ducktracker.connection._attach_ducklake"):
         with connect(config):
             pass
 
@@ -38,7 +38,7 @@ def test_connect_skips_secret_directory_when_empty():
 
     with mock_patch("duckdb.connect", return_value=conn_mock), \
          mock_patch("ducktracker.connection._setup_extensions"), \
-         mock_patch("ducktracker.connection._attach_catalog"):
+         mock_patch("ducktracker.connection._attach_ducklake"):
         with connect(config):
             pass
 

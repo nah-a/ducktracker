@@ -30,7 +30,6 @@ class DuckLakeIntrospector(IntrospectorBase):
         conn: duckdb.DuckDBPyConnection,
         catalog: str,
         exclude_tables: frozenset[str] | None = None,
-        **kwargs,
     ) -> SchemaSnapshot:
         exclude = exclude_tables or frozenset()
         return SchemaSnapshot(
@@ -42,9 +41,6 @@ class DuckLakeIntrospector(IntrospectorBase):
             indexes=self._get_indexes(conn, catalog),
             sequences=self._get_sequences(conn, catalog),
             macros=self._get_macros(conn, catalog),
-            stored_procedures=(),
-            triggers=(),
-            columnar_tables=(),
         )
 
     def _get_schemas(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[str, ...]:

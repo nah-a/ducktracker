@@ -106,28 +106,6 @@ class MacroInfo:
     definition: str
 
 
-@dataclass(frozen=True)
-class StoredProcedureInfo:
-    schema_name: str
-    name: str
-    kind: str           # "function" or "procedure"
-    language: str       # e.g. "plpgsql", "sql"
-    argument_types: str # raw Postgres argument signature
-    return_type: str    # empty string for procedures
-    definition: str
-
-
-@dataclass(frozen=True)
-class TriggerInfo:
-    schema_name: str
-    table_name: str
-    trigger_name: str
-    timing: str         # "BEFORE", "AFTER", "INSTEAD OF"
-    events: str         # e.g. "INSERT OR UPDATE"
-    orientation: str    # "ROW" or "STATEMENT"
-    function_name: str
-
-
 @dataclass
 class SchemaSnapshot:
     """Complete schema state at a point in time."""
@@ -140,9 +118,6 @@ class SchemaSnapshot:
     indexes: tuple[IndexInfo, ...]
     sequences: tuple[SequenceInfo, ...]
     macros: tuple[MacroInfo, ...]
-    stored_procedures: tuple[StoredProcedureInfo, ...] = field(default_factory=tuple)
-    triggers: tuple[TriggerInfo, ...] = field(default_factory=tuple)
-    columnar_tables: tuple[str, ...] = field(default_factory=tuple)
 
     def to_dict(self) -> dict:
         """Serialize to a JSON-compatible dict for storage."""
@@ -174,11 +149,6 @@ class SchemaSnapshot:
             indexes=tuple(IndexInfo(**i) for i in data["indexes"]),
             sequences=tuple(SequenceInfo(**s) for s in data["sequences"]),
             macros=tuple(MacroInfo(**m) for m in data["macros"]),
-            stored_procedures=tuple(
-                StoredProcedureInfo(**p) for p in data.get("stored_procedures", [])
-            ),
-            triggers=tuple(TriggerInfo(**t) for t in data.get("triggers", [])),
-            columnar_tables=tuple(data.get("columnar_tables", [])),
         )
 
     @classmethod

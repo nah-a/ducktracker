@@ -30,14 +30,6 @@ def test_init_ducklake_postgres_creates_valid_toml(tmp_path: Path) -> None:
     assert data["connection"]["catalog_backend"] == "postgres"
 
 
-def test_init_pg_duckdb_creates_valid_toml(tmp_path: Path) -> None:
-    init_directory(tmp_path, "pg-duckdb")
-    with open(tmp_path / "ducktracker.toml", "rb") as f:
-        data = tomllib.load(f)
-    assert data["connection"]["catalog_backend"] == "pg_duckdb"
-    assert data["migrations"]["target_schema"] == "public"
-
-
 def test_init_creates_migrations_dir(tmp_path: Path) -> None:
     init_directory(tmp_path, "ducklake-duckdb")
     assert (tmp_path / "migrations").is_dir()

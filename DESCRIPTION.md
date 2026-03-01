@@ -1,6 +1,6 @@
 # ducktracker
 
-DDL migration and schema drift detection for DuckLake. Supports DuckDB file (local dev) and PostgreSQL (team/production) catalog backends, as well as PostgreSQL as a direct migration target via the pg_duckdb extension.
+DDL migration and schema drift detection for DuckLake. Supports DuckDB file (local dev) and PostgreSQL (team/production) catalog backends.
 
 ## Quick Start
 

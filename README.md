@@ -2,7 +2,7 @@
 
 Simple tool to keep your ducks in a row.
 
-DDL migration and schema drift detection for DuckLake and pg_duckdb.
+DDL migration and schema drift detection for DuckLake.
 
 ## Install
 
@@ -25,13 +25,12 @@ mkdir my-ducklake
 ducktracker init my-ducklake --backend ducklake-duckdb
 ```
 
-If you omit `--backend`, you'll be prompted. Three options:
+If you omit `--backend`, you'll be prompted. Two options:
 
 | Backend | Use when |
 |---|---|
 | `ducklake-duckdb` | DuckLake catalog in a local DuckDB file. Good for local dev. |
 | `ducklake-postgres` | DuckLake catalog in PostgreSQL. Good for teams. |
-| `pg-duckdb` | Direct PostgreSQL with the pg_duckdb extension. No DuckLake. |
 
 `init` creates `ducktracker.toml`, `migrations/`, `.gitignore`, and a `README.md` in the target directory. The directory must already exist — `init` won't create it.
 
@@ -133,7 +132,7 @@ out_of_order = false
 
 ### Using a DuckDB secret
 
-Instead of putting connection details directly in the config file, you can reference a named DuckDB persistent secret. Set `secret_name` in place of `duckdb_metadata_path` (duckdb backend) or `postgres_connection` (ducklake-postgres and pg_duckdb backends):
+Instead of putting connection details directly in the config file, you can reference a named DuckDB persistent secret. Set `secret_name` in place of `duckdb_metadata_path` (duckdb backend) or `postgres_connection` (postgres backend):
 
 ```toml
 [connection]
@@ -181,7 +180,7 @@ These apply to all commands except `init`:
 ```
 -c, --config PATH       Path to ducktracker.toml
     --catalog NAME      Override catalog name
-    --backend TYPE      Override backend (duckdb, postgres, pg_duckdb) — note these differ from init's backend values
+    --backend TYPE      Override backend (duckdb, postgres) — note these differ from init's backend values
     --metadata PATH     Override DuckDB metadata file path
     --connection STRING Override PostgreSQL connection string
     --secrets-dir PATH  Override DuckDB persistent secrets directory

@@ -23,13 +23,6 @@ def test_help(runner):
     assert "ducktracker" in result.output
 
 
-def test_backend_option_accepts_pg_duckdb(runner):
-    """--backend option must include pg_duckdb as a valid choice."""
-    result = runner.invoke(cli, ["--help"])
-    assert result.exit_code == 0
-    assert "pg_duckdb" in result.output
-
-
 def test_secrets_dir_appears_in_help(runner):
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0

@@ -17,5 +17,4 @@ class IntrospectorBase(ABC):
         conn: duckdb.DuckDBPyConnection,
         catalog: str,
         exclude_tables: frozenset[str] | None = None,
-        **kwargs,
     ) -> SchemaSnapshot: ...

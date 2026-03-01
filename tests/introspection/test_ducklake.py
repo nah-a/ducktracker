@@ -70,21 +70,6 @@ def test_snapshot_serialization_roundtrip(populated_conn):
     assert len(restored.views) == len(snap.views)
 
 
-def test_ducklake_stored_procedures_always_empty(conn):
-    snap = DuckLakeIntrospector().introspect(conn, "memory")
-    assert snap.stored_procedures == ()
-
-
-def test_ducklake_triggers_always_empty(conn):
-    snap = DuckLakeIntrospector().introspect(conn, "memory")
-    assert snap.triggers == ()
-
-
-def test_ducklake_columnar_tables_always_empty(conn):
-    snap = DuckLakeIntrospector().introspect(conn, "memory")
-    assert snap.columnar_tables == ()
-
-
 def test_introspect_sequences(conn):
     """DuckLakeIntrospector captures sequences with correct metadata."""
     conn.execute("CREATE SEQUENCE main.my_seq START 10 INCREMENT 2")

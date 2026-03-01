@@ -22,64 +22,24 @@ def connect(config: DuckTrackerConfig) -> Generator[duckdb.DuckDBPyConnection, N
         if config.secret_directory:
             conn.execute("SET secret_directory = ?", [config.secret_directory])
         _setup_extensions(conn, config)
-        _attach_catalog(conn, config)
+        _attach_ducklake(conn, config)
         yield conn
     finally:
         conn.close()
 
 
 def _setup_extensions(conn: duckdb.DuckDBPyConnection, config: DuckTrackerConfig) -> None:
-    if config.catalog_backend == "pg_duckdb":
+    if config.extensions_path:
+        conn.execute(f"INSTALL '{escape_str_lit(config.extensions_path)}/ducklake.duckdb_extension'")
+    else:
+        conn.execute("INSTALL ducklake")
+    conn.execute("LOAD ducklake")
+    if config.catalog_backend == "postgres":
         if config.extensions_path:
             conn.execute(f"INSTALL '{escape_str_lit(config.extensions_path)}/postgres.duckdb_extension'")
         else:
             conn.execute("INSTALL postgres")
         conn.execute("LOAD postgres")
-    else:
-        if config.extensions_path:
-            conn.execute(f"INSTALL '{escape_str_lit(config.extensions_path)}/ducklake.duckdb_extension'")
-        else:
-            conn.execute("INSTALL ducklake")
-        conn.execute("LOAD ducklake")
-        if config.catalog_backend == "postgres":
-            if config.extensions_path:
-                conn.execute(f"INSTALL '{escape_str_lit(config.extensions_path)}/postgres.duckdb_extension'")
-            else:
-                conn.execute("INSTALL postgres")
-            conn.execute("LOAD postgres")
-
-
-def _attach_catalog(conn: duckdb.DuckDBPyConnection, config: DuckTrackerConfig) -> None:
-    if config.catalog_backend == "pg_duckdb":
-        _attach_postgres_direct(conn, config)
-    else:
-        _attach_ducklake(conn, config)
-
-
-def _attach_postgres_direct(
-    conn: duckdb.DuckDBPyConnection, config: DuckTrackerConfig
-) -> None:
-    """Attach a Postgres database directly (no DuckLake)."""
-    if config.data_path:
-        logger.warning(
-            "data_path is ignored for the pg_duckdb backend and has no effect."
-        )
-    if config.read_only:
-        logger.warning(
-            "read_only is ignored for the pg_duckdb backend and has no effect."
-        )
-    if config.secret_name:
-        stmt = (
-            f"ATTACH '' AS {quote_ident(config.catalog_name)} "
-            f"(TYPE postgres, SECRET {quote_ident(config.secret_name)})"
-        )
-    else:
-        stmt = (
-            f"ATTACH 'postgres:{escape_str_lit(config.postgres_connection)}' "
-            f"AS {quote_ident(config.catalog_name)} (TYPE postgres)"
-        )
-    conn.execute(stmt)
-    conn.execute(f"USE {quote_ident(config.catalog_name)}.{quote_ident(config.target_schema)}")
 
 
 def _attach_ducklake(conn: duckdb.DuckDBPyConnection, config: DuckTrackerConfig) -> None:

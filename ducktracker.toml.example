@@ -1,7 +1,7 @@
 [connection]
 catalog_name = "my_ducklake"
 
-# Backend: "duckdb" (default, no PostgreSQL needed), "postgres", or "pg_duckdb"
+# Backend: "duckdb" (default, no PostgreSQL needed) or "postgres"
 catalog_backend = "duckdb"
 
 # DuckDB backend — local metadata file, great for local development
@@ -24,19 +24,6 @@ duckdb_metadata_path = "ducklake_metadata.db"
 
 # Optional: install DuckDB extensions from a local directory instead of the internet
 # extensions_path = "/opt/duckdb/extensions"
-
-# --- pg_duckdb backend (direct Postgres, no DuckLake) ---
-# [connection]
-# catalog_name = "my_pg"
-# catalog_backend = "pg_duckdb"
-# postgres_connection = "dbname=mydb host=localhost port=5432 user=myuser"
-# # OR use a named DuckDB secret:
-# # secret_name = "my_pg_secret"
-#
-# [migrations]
-# directory = "migrations"
-# schema_history_table = "ducktracker_schema_history"
-# target_schema = "public"
 
 [migrations]
 directory = "migrations"

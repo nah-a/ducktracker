@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass, fields
 from pathlib import Path
 
-VALID_BACKENDS = frozenset({"duckdb", "postgres", "pg_duckdb"})
+VALID_BACKENDS = frozenset({"duckdb", "postgres"})
 
 _DEFAULT_CONFIG_FILE = "ducktracker.toml"
 _ENV_PREFIX = "DUCKTRACKER_"
@@ -19,7 +19,7 @@ class DuckTrackerConfig:
 
     # Connection
     catalog_name: str = "my_ducklake"
-    catalog_backend: str = "duckdb"  # "duckdb", "postgres", or "pg_duckdb"
+    catalog_backend: str = "duckdb"  # "duckdb" or "postgres"
     duckdb_metadata_path: str = "ducklake_metadata.db"
     postgres_connection: str = ""
     data_path: str = ""

@@ -10,9 +10,7 @@ from ducktracker.models import (
     MacroInfo,
     SchemaSnapshot,
     SequenceInfo,
-    StoredProcedureInfo,
     TableInfo,
-    TriggerInfo,
 )
 
 
@@ -63,26 +61,4 @@ def make_macro(schema: str, name: str, definition: str = "x + 1") -> MacroInfo:
     return MacroInfo(
         schema_name=schema, macro_name=name, macro_type="scalar",
         parameters="(x)", definition=definition,
-    )
-
-
-def make_proc(
-    schema: str = "main", name: str = "my_func",
-    definition: str = "BEGIN RETURN 1; END",
-) -> StoredProcedureInfo:
-    return StoredProcedureInfo(
-        schema_name=schema, name=name, kind="function",
-        language="plpgsql", argument_types="",
-        return_type="integer", definition=definition,
-    )
-
-
-def make_trigger(
-    schema: str = "main", table: str = "users",
-    name: str = "audit_trigger",
-) -> TriggerInfo:
-    return TriggerInfo(
-        schema_name=schema, table_name=table, trigger_name=name,
-        timing="AFTER", events="INSERT OR UPDATE",
-        orientation="ROW", function_name="audit_fn",
     )

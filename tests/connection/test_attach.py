@@ -1,13 +1,11 @@
-"""Tests for _attach_ducklake and _attach_postgres_direct."""
+"""Tests for _attach_ducklake."""
 
 from __future__ import annotations
 
-import logging
-
 from ducktracker.config import DuckTrackerConfig
-from ducktracker.connection import _attach_ducklake, _attach_postgres_direct
+from ducktracker.connection import _attach_ducklake
 
-from .conftest import pg_cfg, recorded_conn
+from .conftest import recorded_conn
 
 
 def test_attach_ducklake_with_secret():
@@ -58,43 +56,3 @@ def test_attach_ducklake_read_only_adds_option():
     _attach_ducklake(conn, config)
     attach_sql = next(s for s in executed if s.startswith("ATTACH"))
     assert "READ_ONLY" in attach_sql
-
-
-def test_attach_postgres_direct_connection_string():
-    conn, executed = recorded_conn()
-    _attach_postgres_direct(conn, pg_cfg(postgres_connection="dbname=mydb host=localhost"))
-    attach_sql = next(s for s in executed if "ATTACH" in s)
-    assert "postgres:dbname=mydb host=localhost" in attach_sql
-    assert "TYPE postgres" in attach_sql
-
-
-def test_attach_postgres_direct_secret_name():
-    conn, executed = recorded_conn()
-    _attach_postgres_direct(conn, pg_cfg(secret_name="my_pg_secret", postgres_connection=""))
-    attach_sql = next(s for s in executed if "ATTACH" in s)
-    assert 'SECRET "my_pg_secret"' in attach_sql
-    assert "TYPE postgres" in attach_sql
-
-
-def test_attach_postgres_direct_secret_takes_precedence():
-    conn, executed = recorded_conn()
-    _attach_postgres_direct(
-        conn, pg_cfg(secret_name="my_secret", postgres_connection="dbname=ignored")
-    )
-    attach_sql = next(s for s in executed if "ATTACH" in s)
-    assert 'SECRET "my_secret"' in attach_sql
-    assert "ignored" not in attach_sql
-
-
-def test_attach_postgres_direct_warns_on_data_path(caplog):
-    conn, _ = recorded_conn()
-    with caplog.at_level(logging.WARNING, logger="ducktracker.connection"):
-        _attach_postgres_direct(conn, pg_cfg(data_path="/some/path"))
-    assert any("data_path" in r.message.lower() for r in caplog.records)
-
-
-def test_attach_postgres_direct_warns_on_read_only(caplog):
-    conn, _ = recorded_conn()
-    with caplog.at_level(logging.WARNING, logger="ducktracker.connection"):
-        _attach_postgres_direct(conn, pg_cfg(read_only=True))
-    assert any("read_only" in r.message.lower() for r in caplog.records)

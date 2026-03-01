@@ -1,6 +1,6 @@
 # ducktracker
 
-This repository manages schema migrations for a DuckLake or pg_duckdb instance
+This repository manages schema migrations for a DuckLake instance
 using [ducktracker](https://github.com/ducklake-io/ducktracker).
 
 ## What's here
@@ -57,7 +57,7 @@ ducktracker --backend postgres --connection "..." migrate
 | Variable | Config key | Description |
 |---|---|---|
 | `DUCKTRACKER_CATALOG_NAME` | `connection.catalog_name` | Catalog name |
-| `DUCKTRACKER_CATALOG_BACKEND` | `connection.catalog_backend` | `duckdb`, `postgres`, or `pg_duckdb` |
+| `DUCKTRACKER_CATALOG_BACKEND` | `connection.catalog_backend` | `duckdb` or `postgres` |
 | `DUCKTRACKER_DUCKDB_METADATA_PATH` | `connection.duckdb_metadata_path` | Local DuckDB metadata file |
 | `DUCKTRACKER_POSTGRES_CONNECTION` | `connection.postgres_connection` | PostgreSQL connection string |
 | `DUCKTRACKER_SECRET_NAME` | `connection.secret_name` | Named DuckDB secret (alternative to connection string) |
