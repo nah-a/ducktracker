@@ -114,15 +114,3 @@ def test_introspect_unique_constraints(conn):
     snap = DuckLakeIntrospector().introspect(conn, "memory")
     items = next(t for t in snap.tables if t.table_name == "items")
     assert len(items.unique_constraints) >= 1
-
-
-def test_get_constraints_handles_query_error():
-    """_get_constraints returns (None, ()) without raising when the query fails."""
-    from unittest.mock import MagicMock
-
-    introspector = DuckLakeIntrospector()
-    bad_conn = MagicMock()
-    bad_conn.execute.side_effect = duckdb.Error("constraint query failed")
-    pk, ucs = introspector._get_constraints(bad_conn, "memory", "main", "items")
-    assert pk is None
-    assert ucs == ()

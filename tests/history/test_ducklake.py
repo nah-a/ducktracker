@@ -7,13 +7,7 @@ from datetime import datetime
 import pytest
 
 from ducktracker.history import HistoryManagerBase
-from ducktracker.history.ducklake import DuckLakeHistoryManager
 from ducktracker.models import SchemaSnapshot
-
-
-@pytest.fixture
-def mgr() -> DuckLakeHistoryManager:
-    return DuckLakeHistoryManager()
 
 
 @pytest.fixture

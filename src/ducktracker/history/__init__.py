@@ -19,7 +19,9 @@ class HistoryManagerBase(ABC):
         catalog: str,
         schema: str,
         table: str,
-    ) -> None: ...
+    ) -> None:
+        """Create the schema history table if it does not already exist."""
+        ...
 
     @abstractmethod
     def get_applied_migrations(
@@ -28,7 +30,9 @@ class HistoryManagerBase(ABC):
         catalog: str,
         schema: str,
         table: str,
-    ) -> list[AppliedMigration]: ...
+    ) -> list[AppliedMigration]:
+        """Return all recorded migrations ordered by installed_rank."""
+        ...
 
     @abstractmethod
     def record_migration(
@@ -45,7 +49,9 @@ class HistoryManagerBase(ABC):
         execution_time_ms: int,
         success: bool,
         snapshot_json: str | None = None,
-    ) -> None: ...
+    ) -> None:
+        """Insert a migration record (success or failure) into the history table."""
+        ...
 
     @abstractmethod
     def get_latest_snapshot(
@@ -54,7 +60,9 @@ class HistoryManagerBase(ABC):
         catalog: str,
         schema: str,
         table: str,
-    ) -> SchemaSnapshot | None: ...
+    ) -> SchemaSnapshot | None:
+        """Return the most recent successful schema snapshot, or None if none exists."""
+        ...
 
     @abstractmethod
     def record_baseline(
@@ -66,7 +74,9 @@ class HistoryManagerBase(ABC):
         version: int,
         description: str,
         snapshot_json: str | None = None,
-    ) -> None: ...
+    ) -> None:
+        """Record a baseline entry marking an existing schema version as applied."""
+        ...
 
     @abstractmethod
     def update_latest_snapshot(
@@ -76,4 +86,6 @@ class HistoryManagerBase(ABC):
         schema: str,
         table: str,
         snapshot_json: str,
-    ) -> None: ...
+    ) -> None:
+        """Attach a schema snapshot to the most recent history record."""
+        ...

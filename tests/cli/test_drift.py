@@ -8,10 +8,15 @@ from ducktracker.connection import connect
 
 
 def test_drift_no_drift_after_migrate(runner, ducklake_cfg_file):
-    # apply_migrations captures a schema snapshot on the last migration
-    runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    """No drift is reported immediately after a successful migrate."""
+    migrate_result = runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    assert migrate_result.exit_code == 0, (
+        f"migrate failed (exit {migrate_result.exit_code}):\n{migrate_result.output}"
+        + (f"\n{migrate_result.exception}" if migrate_result.exception else "")
+    )
+
     result = runner.invoke(cli, ["-c", ducklake_cfg_file, "drift"])
-    assert result.exit_code == 0
+    assert result.exit_code == 0, f"drift failed (exit {result.exit_code}):\n{result.output}"
     assert "No schema drift" in result.output
 
 
@@ -24,7 +29,11 @@ def test_drift_no_snapshot_exits_1(runner, ducklake_cfg_file):
 
 def test_drift_shows_modified_item_detail(runner, ducklake_cfg_file):
     """drift prints snapshot:/live: lines for modified schema objects."""
-    runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    migrate_result = runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    assert migrate_result.exit_code == 0, (
+        f"migrate failed (exit {migrate_result.exit_code}):\n{migrate_result.output}"
+        + (f"\n{migrate_result.exception}" if migrate_result.exception else "")
+    )
 
     cfg = load_config(config_path=ducklake_cfg_file)
     with connect(cfg) as conn:
@@ -39,7 +48,11 @@ def test_drift_shows_modified_item_detail(runner, ducklake_cfg_file):
 
 def test_drift_with_live_drift_exits_1_and_prints_report(runner, ducklake_cfg_file):
     """drift exits 1 and prints a full report when the live schema has changed."""
-    runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    migrate_result = runner.invoke(cli, ["-c", ducklake_cfg_file, "migrate"])
+    assert migrate_result.exit_code == 0, (
+        f"migrate failed (exit {migrate_result.exit_code}):\n{migrate_result.output}"
+        + (f"\n{migrate_result.exception}" if migrate_result.exception else "")
+    )
 
     cfg = load_config(config_path=ducklake_cfg_file)
     with connect(cfg) as conn:

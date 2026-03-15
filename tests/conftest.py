@@ -7,6 +7,8 @@ from pathlib import Path
 import duckdb
 import pytest
 
+from ducktracker.history.ducklake import DuckLakeHistoryManager
+
 
 @pytest.fixture
 def conn():
@@ -34,6 +36,12 @@ def empty_migrations_dir(tmp_path: Path) -> Path:
     d = tmp_path / "empty_migrations"
     d.mkdir()
     return d
+
+
+@pytest.fixture
+def mgr() -> DuckLakeHistoryManager:
+    """Shared DuckLakeHistoryManager instance."""
+    return DuckLakeHistoryManager()
 
 
 @pytest.fixture
