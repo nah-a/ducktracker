@@ -1,7 +1,9 @@
 """DuckLake catalog introspection using DuckDB catalog views."""
+
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 import duckdb
@@ -20,6 +22,23 @@ from ducktracker.models import (
 logger = logging.getLogger(__name__)
 
 _SYSTEM_SCHEMAS = frozenset({"information_schema", "pg_catalog"})
+
+
+def _safe_query[T](
+    conn: duckdb.DuckDBPyConnection,
+    sql: str,
+    params: list[str],
+    transform: Callable[[list[tuple[object, ...]]], T],
+    default: T,
+    label: str,
+) -> T:
+    """Execute a catalog query, returning *default* on duckdb.Error."""
+    try:
+        rows = conn.execute(sql, params).fetchall()
+    except duckdb.Error:
+        logger.warning("Could not query %s", label)
+        return default
+    return transform(rows)
 
 
 class DuckLakeIntrospector(IntrospectorBase):
@@ -44,17 +63,13 @@ class DuckLakeIntrospector(IntrospectorBase):
         )
 
     def _get_schemas(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[str, ...]:
-        try:
-            rows = conn.execute(
-                "SELECT schema_name FROM information_schema.schemata "
-                "WHERE catalog_name = ?",
-                [catalog],
-            ).fetchall()
-        except duckdb.Error:
-            logger.warning("Could not query schemata for catalog %s", catalog)
-            return ()
-        return tuple(
-            row[0] for row in rows if row[0] not in _SYSTEM_SCHEMAS
+        return _safe_query(
+            conn,
+            "SELECT schema_name FROM information_schema.schemata WHERE catalog_name = ?",
+            [catalog],
+            lambda rows: tuple(row[0] for row in rows if row[0] not in _SYSTEM_SCHEMAS),
+            (),
+            f"schemata for catalog {catalog}",
         )
 
     def _get_tables(
@@ -144,90 +159,78 @@ class DuckLakeIntrospector(IntrospectorBase):
         return pk, tuple(ucs)
 
     def _get_views(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[ViewInfo, ...]:
-        try:
-            rows = conn.execute(
-                "SELECT table_schema, table_name, view_definition "
-                "FROM information_schema.views "
-                "WHERE table_catalog = ?",
-                [catalog],
-            ).fetchall()
-        except duckdb.Error:
-            logger.warning("Could not query views for catalog %s", catalog)
-            return ()
-        return tuple(
-            ViewInfo(
-                schema_name=row[0],
-                view_name=row[1],
-                sql_definition=row[2] or "",
-            )
-            for row in rows
-            if row[0] not in _SYSTEM_SCHEMAS
+        return _safe_query(
+            conn,
+            "SELECT table_schema, table_name, view_definition FROM information_schema.views WHERE table_catalog = ?",
+            [catalog],
+            lambda rows: tuple(
+                ViewInfo(schema_name=row[0], view_name=row[1], sql_definition=row[2] or "")
+                for row in rows
+                if row[0] not in _SYSTEM_SCHEMAS
+            ),
+            (),
+            f"views for catalog {catalog}",
         )
 
     def _get_indexes(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[IndexInfo, ...]:
-        try:
-            rows = conn.execute(
-                "SELECT schema_name, table_name, index_name, is_unique, sql "
-                "FROM duckdb_indexes() "
-                "WHERE database_name = ?",
-                [catalog],
-            ).fetchall()
-        except duckdb.Error:
-            logger.debug("Could not query indexes for catalog %s", catalog)
-            return ()
-        return tuple(
-            IndexInfo(
-                schema_name=row[0],
-                table_name=row[1],
-                index_name=row[2],
-                is_unique=row[3],
-                sql_definition=row[4] or "",
-            )
-            for row in rows
+        return _safe_query(
+            conn,
+            "SELECT schema_name, table_name, index_name, is_unique, sql FROM duckdb_indexes() WHERE database_name = ?",
+            [catalog],
+            lambda rows: tuple(
+                IndexInfo(
+                    schema_name=row[0],
+                    table_name=row[1],
+                    index_name=row[2],
+                    is_unique=row[3],
+                    sql_definition=row[4] or "",
+                )
+                for row in rows
+            ),
+            (),
+            f"indexes for catalog {catalog}",
         )
 
     def _get_sequences(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[SequenceInfo, ...]:
-        try:
-            rows = conn.execute(
-                "SELECT schema_name, sequence_name, start_value, increment_by, min_value, max_value "
-                "FROM duckdb_sequences() "
-                "WHERE database_name = ?",
-                [catalog],
-            ).fetchall()
-        except duckdb.Error:
-            logger.debug("Could not query sequences for catalog %s", catalog)
-            return ()
-        return tuple(
-            SequenceInfo(
-                schema_name=row[0],
-                sequence_name=row[1],
-                start_value=row[2],
-                increment_by=row[3],
-                min_value=row[4],
-                max_value=row[5],
-            )
-            for row in rows
+        return _safe_query(
+            conn,
+            "SELECT schema_name, sequence_name, start_value, increment_by, min_value, max_value "
+            "FROM duckdb_sequences() "
+            "WHERE database_name = ?",
+            [catalog],
+            lambda rows: tuple(
+                SequenceInfo(
+                    schema_name=row[0],
+                    sequence_name=row[1],
+                    start_value=row[2],
+                    increment_by=row[3],
+                    min_value=row[4],
+                    max_value=row[5],
+                )
+                for row in rows
+            ),
+            (),
+            f"sequences for catalog {catalog}",
         )
 
     def _get_macros(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[MacroInfo, ...]:
-        try:
-            rows = conn.execute(
-                "SELECT schema_name, function_name, function_type, parameters, macro_definition "
-                "FROM duckdb_functions() "
-                "WHERE database_name = ? "
-                "AND function_type IN ('macro', 'table_macro')",
-                [catalog],
-            ).fetchall()
-        except duckdb.Error:
-            logger.debug("Could not query macros for catalog %s", catalog)
-            return ()
-        return tuple(
-            MacroInfo(
-                schema_name=row[0],
-                macro_name=row[1],
-                macro_type="table" if row[2] == "table_macro" else "scalar",
-                parameters=str(row[3]) if row[3] else "",
-                definition=row[4] or "",
-            )
-            for row in rows
+        return _safe_query(
+            conn,
+            "SELECT schema_name, function_name, function_type, parameters, macro_definition "
+            "FROM duckdb_functions() "
+            "WHERE database_name = ? "
+            "AND function_type IN ('macro', 'table_macro')",
+            [catalog],
+            lambda rows: tuple(
+                MacroInfo(
+                    schema_name=row[0],
+                    macro_name=row[1],
+                    macro_type="table" if row[2] == "table_macro" else "scalar",
+                    parameters=str(row[3]) if row[3] else "",
+                    definition=row[4] or "",
+                )
+                for row in rows
+            ),
+            (),
+            f"macros for catalog {catalog}",
         )

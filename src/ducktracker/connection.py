@@ -48,6 +48,8 @@ def _attach_ducklake(conn: duckdb.DuckDBPyConnection, config: DuckTrackerConfig)
     elif config.catalog_backend == "duckdb":
         uri = f"ducklake:{escape_str_lit(config.duckdb_metadata_path)}"
     else:
+        if not config.postgres_connection:
+            raise ValueError("postgres_connection is required when catalog_backend is 'postgres'")
         uri = f"ducklake:postgres:{escape_str_lit(config.postgres_connection)}"
 
     parts = [f"ATTACH '{uri}' AS {quote_ident(config.catalog_name)}"]

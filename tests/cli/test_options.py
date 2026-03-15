@@ -51,31 +51,35 @@ def test_secrets_dir_passed_to_load_config(runner, tmp_path: Path):
 
 def test_catalog_option_sets_override(runner, tmp_path: Path):
     migrations_dir, config_file = cli_override_fixture(tmp_path)
-    with patch("ducktracker.cli.load_config",
-               return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))) as mock_load:
+    with patch(
+        "ducktracker.cli.load_config", return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))
+    ) as mock_load:
         runner.invoke(cli, ["-c", str(config_file), "--catalog", "my_cat", "create", "t"])
     assert mock_load.call_args[1]["overrides"].get("catalog_name") == "my_cat"
 
 
 def test_backend_option_sets_override(runner, tmp_path: Path):
     migrations_dir, config_file = cli_override_fixture(tmp_path)
-    with patch("ducktracker.cli.load_config",
-               return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))) as mock_load:
+    with patch(
+        "ducktracker.cli.load_config", return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))
+    ) as mock_load:
         runner.invoke(cli, ["-c", str(config_file), "--backend", "duckdb", "create", "t"])
     assert mock_load.call_args[1]["overrides"].get("catalog_backend") == "duckdb"
 
 
 def test_metadata_option_sets_override(runner, tmp_path: Path):
     migrations_dir, config_file = cli_override_fixture(tmp_path)
-    with patch("ducktracker.cli.load_config",
-               return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))) as mock_load:
+    with patch(
+        "ducktracker.cli.load_config", return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))
+    ) as mock_load:
         runner.invoke(cli, ["-c", str(config_file), "--metadata", "/tmp/meta.db", "create", "t"])
     assert mock_load.call_args[1]["overrides"].get("duckdb_metadata_path") == "/tmp/meta.db"
 
 
 def test_connection_option_sets_override(runner, tmp_path: Path):
     migrations_dir, config_file = cli_override_fixture(tmp_path)
-    with patch("ducktracker.cli.load_config",
-               return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))) as mock_load:
+    with patch(
+        "ducktracker.cli.load_config", return_value=DuckTrackerConfig(migrations_dir=str(migrations_dir))
+    ) as mock_load:
         runner.invoke(cli, ["-c", str(config_file), "--connection", "dbname=foo", "create", "t"])
     assert mock_load.call_args[1]["overrides"].get("postgres_connection") == "dbname=foo"

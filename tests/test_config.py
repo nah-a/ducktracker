@@ -19,15 +19,15 @@ def test_defaults():
 def test_load_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
     toml_file.write_text(
-        '[connection]\n'
+        "[connection]\n"
         'catalog_name = "prod_lake"\n'
         'postgres_connection = "dbname=prod host=db.example.com"\n'
-        '\n'
-        '[migrations]\n'
+        "\n"
+        "[migrations]\n"
         'directory = "db/migrations"\n'
-        '\n'
-        '[behavior]\n'
-        'out_of_order = true\n'
+        "\n"
+        "[behavior]\n"
+        "out_of_order = true\n"
     )
     cfg = load_config(config_path=toml_file)
     assert cfg.catalog_name == "prod_lake"
@@ -38,10 +38,7 @@ def test_load_from_toml(tmp_path: Path):
 
 def test_env_overrides(tmp_path: Path, monkeypatch):
     toml_file = tmp_path / "test.toml"
-    toml_file.write_text(
-        '[connection]\n'
-        'catalog_name = "from_toml"\n'
-    )
+    toml_file.write_text('[connection]\ncatalog_name = "from_toml"\n')
     monkeypatch.setenv("DUCKTRACKER_CATALOG_NAME", "from_env")
     cfg = load_config(config_path=toml_file)
     assert cfg.catalog_name == "from_env"
@@ -61,11 +58,7 @@ def test_missing_toml_uses_defaults():
 
 def test_duckdb_backend_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
-    toml_file.write_text(
-        '[connection]\n'
-        'catalog_backend = "duckdb"\n'
-        'duckdb_metadata_path = "/tmp/my_catalog.db"\n'
-    )
+    toml_file.write_text('[connection]\ncatalog_backend = "duckdb"\nduckdb_metadata_path = "/tmp/my_catalog.db"\n')
     cfg = load_config(config_path=toml_file)
     assert cfg.catalog_backend == "duckdb"
     assert cfg.duckdb_metadata_path == "/tmp/my_catalog.db"
@@ -74,9 +67,7 @@ def test_duckdb_backend_from_toml(tmp_path: Path):
 def test_postgres_backend_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
     toml_file.write_text(
-        '[connection]\n'
-        'catalog_backend = "postgres"\n'
-        'postgres_connection = "dbname=prod host=db.example.com"\n'
+        '[connection]\ncatalog_backend = "postgres"\npostgres_connection = "dbname=prod host=db.example.com"\n'
     )
     cfg = load_config(config_path=toml_file)
     assert cfg.catalog_backend == "postgres"
@@ -104,10 +95,7 @@ def test_extensions_path_default_is_empty():
 
 def test_extensions_path_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
-    toml_file.write_text(
-        '[connection]\n'
-        'extensions_path = "/opt/duckdb/extensions"\n'
-    )
+    toml_file.write_text('[connection]\nextensions_path = "/opt/duckdb/extensions"\n')
     cfg = load_config(config_path=toml_file)
     assert cfg.extensions_path == "/opt/duckdb/extensions"
 
@@ -125,10 +113,7 @@ def test_secret_name_default_is_empty():
 
 def test_secret_name_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
-    toml_file.write_text(
-        '[connection]\n'
-        'secret_name = "my_ducklake_secret"\n'
-    )
+    toml_file.write_text('[connection]\nsecret_name = "my_ducklake_secret"\n')
     cfg = load_config(config_path=toml_file)
     assert cfg.secret_name == "my_ducklake_secret"
 
@@ -146,10 +131,7 @@ def test_secret_directory_default_is_empty():
 
 def test_secret_directory_from_toml(tmp_path: Path):
     toml_file = tmp_path / "test.toml"
-    toml_file.write_text(
-        '[connection]\n'
-        'secret_directory = "/run/secrets/duckdb"\n'
-    )
+    toml_file.write_text('[connection]\nsecret_directory = "/run/secrets/duckdb"\n')
     cfg = load_config(config_path=toml_file)
     assert cfg.secret_directory == "/run/secrets/duckdb"
 

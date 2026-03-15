@@ -10,12 +10,18 @@ from .conftest import make_macro, make_snapshot
 
 def test_macro_drift():
     m1 = MacroInfo(
-        schema_name="main", macro_name="my_macro", macro_type="scalar",
-        parameters="(x)", definition="x + 1",
+        schema_name="main",
+        macro_name="my_macro",
+        macro_type="scalar",
+        parameters="(x)",
+        definition="x + 1",
     )
     m2 = MacroInfo(
-        schema_name="main", macro_name="my_macro", macro_type="scalar",
-        parameters="(x)", definition="x + 2",
+        schema_name="main",
+        macro_name="my_macro",
+        macro_type="scalar",
+        parameters="(x)",
+        definition="x + 2",
     )
     expected = make_snapshot(macros=(m1,))
     actual = make_snapshot(macros=(m2,))

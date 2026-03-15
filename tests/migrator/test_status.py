@@ -30,10 +30,17 @@ def test_get_pending_migrations(setup_conn, migrations_dir, mgr):
 def test_get_pending_skips_applied(setup_conn, migrations_dir, mgr):
     discovered = discover(migrations_dir)
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=1, description="create_users", migration_type="V",
-        script="V1__create_users.sql", checksum=discovered[0].checksum,
-        execution_time_ms=10, success=True,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=1,
+        description="create_users",
+        migration_type="V",
+        script="V1__create_users.sql",
+        checksum=discovered[0].checksum,
+        execution_time_ms=10,
+        success=True,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
     pending = get_pending_migrations(applied, discovered)
@@ -49,10 +56,17 @@ def test_out_of_order_rejected(setup_conn, tmp_path, mgr):
     discovered = discover(d)
 
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=5, description="later", migration_type="V",
-        script="V5__later.sql", checksum=discovered[0].checksum,
-        execution_time_ms=10, success=True,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=5,
+        description="later",
+        migration_type="V",
+        script="V5__later.sql",
+        checksum=discovered[0].checksum,
+        execution_time_ms=10,
+        success=True,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
 
@@ -68,10 +82,17 @@ def test_out_of_order_allowed_when_flag_set(setup_conn, mgr, tmp_path):
     (d / "V3__earlier.sql").write_text("SELECT 2;")
     discovered = discover(d)
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=5, description="later", migration_type="V",
-        script="V5__later.sql", checksum=discovered[0].checksum,
-        execution_time_ms=10, success=True,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=5,
+        description="later",
+        migration_type="V",
+        script="V5__later.sql",
+        checksum=discovered[0].checksum,
+        execution_time_ms=10,
+        success=True,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
     pending = get_pending_migrations(applied, discovered, out_of_order=True)
@@ -82,10 +103,17 @@ def test_get_migration_status_failed(setup_conn, migrations_dir, mgr):
     """get_migration_status returns FAILED for a migration recorded with success=False."""
     discovered = discover(migrations_dir)
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=1, description="create_users", migration_type="V",
-        script="V1__create_users.sql", checksum=discovered[0].checksum,
-        execution_time_ms=10, success=False,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=1,
+        description="create_users",
+        migration_type="V",
+        script="V1__create_users.sql",
+        checksum=discovered[0].checksum,
+        execution_time_ms=10,
+        success=False,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
     statuses = get_migration_status(applied, discovered)
@@ -101,10 +129,17 @@ def test_get_migration_status_outdated(setup_conn, tmp_path, mgr):
     discovered = discover(d)
     # Record it with a wrong checksum to simulate the file having changed
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=None, description="refresh", migration_type="R",
-        script="R__refresh.sql", checksum="old_checksum_that_no_longer_matches",
-        execution_time_ms=5, success=True,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=None,
+        description="refresh",
+        migration_type="R",
+        script="R__refresh.sql",
+        checksum="old_checksum_that_no_longer_matches",
+        execution_time_ms=5,
+        success=True,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
     statuses = get_migration_status(applied, discovered)
@@ -115,10 +150,17 @@ def test_get_migration_status_outdated(setup_conn, tmp_path, mgr):
 def test_get_migration_status_missing(setup_conn, mgr):
     """get_migration_status returns MISSING for an applied migration whose file is gone."""
     mgr.record_migration(
-        conn=setup_conn, catalog="memory", schema="main", table="ducktracker_schema_history",
-        version=99, description="deleted", migration_type="V",
-        script="V99__deleted.sql", checksum="somehash",
-        execution_time_ms=5, success=True,
+        conn=setup_conn,
+        catalog="memory",
+        schema="main",
+        table="ducktracker_schema_history",
+        version=99,
+        description="deleted",
+        migration_type="V",
+        script="V99__deleted.sql",
+        checksum="somehash",
+        execution_time_ms=5,
+        success=True,
     )
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
     # Pass an empty discovered list so V99 has no matching file

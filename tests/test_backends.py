@@ -1,4 +1,5 @@
 """Tests for backend factory functions."""
+
 from __future__ import annotations
 
 from ducktracker.backends import get_history_manager, get_introspector

@@ -226,7 +226,14 @@ def test_round_trip_full_snapshot():
             ),
         ),
         sequences=(
-            SequenceInfo(schema_name="main", sequence_name="seq1", start_value=1, increment_by=1, min_value=1, max_value=999),
+            SequenceInfo(
+                schema_name="main",
+                sequence_name="seq1",
+                start_value=1,
+                increment_by=1,
+                min_value=1,
+                max_value=999,
+            ),
         ),
         macros=(
             MacroInfo(schema_name="main", macro_name="m1", macro_type="table", parameters="", definition="SELECT 1"),

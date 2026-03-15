@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from ducktracker.config import DuckTrackerConfig
 from ducktracker.connection import _attach_ducklake
 
@@ -56,3 +58,15 @@ def test_attach_ducklake_read_only_adds_option():
     _attach_ducklake(conn, config)
     attach_sql = next(s for s in executed if s.startswith("ATTACH"))
     assert "READ_ONLY" in attach_sql
+
+
+def test_attach_ducklake_postgres_missing_connection_raises():
+    """catalog_backend='postgres' with empty connection string raises ValueError."""
+    conn, _ = recorded_conn()
+    config = DuckTrackerConfig(
+        catalog_backend="postgres",
+        postgres_connection="",
+        catalog_name="lake",
+    )
+    with pytest.raises(ValueError, match="postgres_connection is required"):
+        _attach_ducklake(conn, config)

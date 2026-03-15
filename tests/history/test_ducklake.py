@@ -1,4 +1,5 @@
 """Tests for DuckLakeHistoryManager using in-memory DuckDB."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -6,13 +7,7 @@ from datetime import datetime
 import pytest
 
 from ducktracker.history import HistoryManagerBase
-from ducktracker.history.ducklake import DuckLakeHistoryManager
 from ducktracker.models import SchemaSnapshot
-
-
-@pytest.fixture
-def mgr() -> DuckLakeHistoryManager:
-    return DuckLakeHistoryManager()
 
 
 @pytest.fixture
@@ -35,10 +30,17 @@ def test_ensure_history_table_idempotent(conn, mgr):
 
 def test_record_and_retrieve(conn, mgr, history_table_ducklake):
     mgr.record_migration(
-        conn=conn, catalog="memory", schema="main", table=history_table_ducklake,
-        version=1, description="create_users", migration_type="V",
-        script="V1__create_users.sql", checksum="abc123",
-        execution_time_ms=42, success=True,
+        conn=conn,
+        catalog="memory",
+        schema="main",
+        table=history_table_ducklake,
+        version=1,
+        description="create_users",
+        migration_type="V",
+        script="V1__create_users.sql",
+        checksum="abc123",
+        execution_time_ms=42,
+        success=True,
     )
     applied = mgr.get_applied_migrations(conn, "memory", "main", history_table_ducklake)
     assert len(applied) == 1
@@ -50,10 +52,17 @@ def test_record_and_retrieve(conn, mgr, history_table_ducklake):
 def test_rank_increments(conn, mgr, history_table_ducklake):
     for i in range(1, 4):
         mgr.record_migration(
-            conn=conn, catalog="memory", schema="main", table=history_table_ducklake,
-            version=i, description=f"migration_{i}", migration_type="V",
-            script=f"V{i}__migration_{i}.sql", checksum=f"hash{i}",
-            execution_time_ms=10, success=True,
+            conn=conn,
+            catalog="memory",
+            schema="main",
+            table=history_table_ducklake,
+            version=i,
+            description=f"migration_{i}",
+            migration_type="V",
+            script=f"V{i}__migration_{i}.sql",
+            checksum=f"hash{i}",
+            execution_time_ms=10,
+            success=True,
         )
     applied = mgr.get_applied_migrations(conn, "memory", "main", history_table_ducklake)
     assert [a.installed_rank for a in applied] == [1, 2, 3]
@@ -69,13 +78,25 @@ def test_snapshot_roundtrip(conn, mgr, history_table_ducklake):
         catalog_name="test",
         captured_at=datetime(2026, 2, 21, 10, 0, 0),
         schemas=("main",),
-        tables=(), views=(), indexes=(), sequences=(), macros=(),
+        tables=(),
+        views=(),
+        indexes=(),
+        sequences=(),
+        macros=(),
     )
     mgr.record_migration(
-        conn=conn, catalog="memory", schema="main", table=history_table_ducklake,
-        version=1, description="test", migration_type="V",
-        script="V1__test.sql", checksum="abc",
-        execution_time_ms=10, success=True, snapshot_json=snapshot.to_json(),
+        conn=conn,
+        catalog="memory",
+        schema="main",
+        table=history_table_ducklake,
+        version=1,
+        description="test",
+        migration_type="V",
+        script="V1__test.sql",
+        checksum="abc",
+        execution_time_ms=10,
+        success=True,
+        snapshot_json=snapshot.to_json(),
     )
     retrieved = mgr.get_latest_snapshot(conn, "memory", "main", history_table_ducklake)
     assert retrieved is not None
@@ -87,8 +108,7 @@ def test_get_latest_snapshot_returns_none_when_empty(conn, mgr, history_table_du
 
 
 def test_record_baseline(conn, mgr, history_table_ducklake):
-    mgr.record_baseline(conn, "memory", "main", history_table_ducklake,
-                        version=5, description="baseline")
+    mgr.record_baseline(conn, "memory", "main", history_table_ducklake, version=5, description="baseline")
     applied = mgr.get_applied_migrations(conn, "memory", "main", history_table_ducklake)
     assert len(applied) == 1
     assert applied[0].script == "<< Baseline V5 >>"
