@@ -102,8 +102,7 @@ def load_config(
 
     if config.catalog_backend not in VALID_BACKENDS:
         raise ValueError(
-            f"Invalid catalog_backend: {config.catalog_backend!r}. "
-            f"Must be one of: {', '.join(sorted(VALID_BACKENDS))}"
+            f"Invalid catalog_backend: {config.catalog_backend!r}. Must be one of: {', '.join(sorted(VALID_BACKENDS))}"
         )
 
     return config

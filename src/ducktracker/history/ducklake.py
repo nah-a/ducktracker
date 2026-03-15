@@ -1,4 +1,5 @@
 """DuckLake history manager — three-part FQN, DuckDB types."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -27,7 +28,6 @@ CREATE TABLE IF NOT EXISTS {fqn} (
 
 
 class DuckLakeHistoryManager(HistoryManagerBase):
-
     def _fqn(self, catalog: str, schema: str, table: str) -> str:
         return f"{quote_ident(catalog)}.{quote_ident(schema)}.{quote_ident(table)}"
 
@@ -59,10 +59,16 @@ class DuckLakeHistoryManager(HistoryManagerBase):
             return []
         return [
             AppliedMigration(
-                installed_rank=row[0], version=row[1], description=row[2],
-                migration_type=row[3], script=row[4], checksum=row[5],
-                installed_by=row[6], installed_on=row[7],
-                execution_time_ms=row[8], success=row[9],
+                installed_rank=row[0],
+                version=row[1],
+                description=row[2],
+                migration_type=row[3],
+                script=row[4],
+                checksum=row[5],
+                installed_by=row[6],
+                installed_on=row[7],
+                execution_time_ms=row[8],
+                success=row[9],
             )
             for row in rows
         ]
@@ -83,17 +89,25 @@ class DuckLakeHistoryManager(HistoryManagerBase):
         snapshot_json: str | None = None,
     ) -> None:
         fqn = self._fqn(catalog, schema, table)
-        rank = conn.execute(
-            f"SELECT COALESCE(MAX(installed_rank), 0) + 1 FROM {fqn}"
-        ).fetchone()[0]
+        rank = conn.execute(f"SELECT COALESCE(MAX(installed_rank), 0) + 1 FROM {fqn}").fetchone()[0]
         now = datetime.now(tz=UTC).replace(tzinfo=None)
         conn.execute(
             f"INSERT INTO {fqn} "
             f"(installed_rank, version, description, migration_type, script, "
             f"checksum, installed_on, execution_time_ms, success, snapshot_json) "
             f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [rank, version, description, migration_type, script, checksum,
-             now, execution_time_ms, success, snapshot_json],
+            [
+                rank,
+                version,
+                description,
+                migration_type,
+                script,
+                checksum,
+                now,
+                execution_time_ms,
+                success,
+                snapshot_json,
+            ],
         )
 
     def get_latest_snapshot(
@@ -127,10 +141,18 @@ class DuckLakeHistoryManager(HistoryManagerBase):
         snapshot_json: str | None = None,
     ) -> None:
         self.record_migration(
-            conn=conn, catalog=catalog, schema=schema, table=table,
-            version=version, description=description, migration_type="V",
-            script=f"<< Baseline V{version} >>", checksum="baseline",
-            execution_time_ms=0, success=True, snapshot_json=snapshot_json,
+            conn=conn,
+            catalog=catalog,
+            schema=schema,
+            table=table,
+            version=version,
+            description=description,
+            migration_type="V",
+            script=f"<< Baseline V{version} >>",
+            checksum="baseline",
+            execution_time_ms=0,
+            success=True,
+            snapshot_json=snapshot_json,
         )
 
     def update_latest_snapshot(
@@ -143,7 +165,6 @@ class DuckLakeHistoryManager(HistoryManagerBase):
     ) -> None:
         fqn = self._fqn(catalog, schema, table)
         conn.execute(
-            f"UPDATE {fqn} SET snapshot_json = ? "
-            f"WHERE installed_rank = (SELECT MAX(installed_rank) FROM {fqn})",
+            f"UPDATE {fqn} SET snapshot_json = ? WHERE installed_rank = (SELECT MAX(installed_rank) FROM {fqn})",
             [snapshot_json],
         )

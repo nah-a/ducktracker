@@ -1,4 +1,5 @@
 """History manager ABC for ducktracker backends."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

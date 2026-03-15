@@ -10,12 +10,20 @@ from .conftest import make_sequence, make_snapshot
 
 def test_sequence_drift():
     s1 = SequenceInfo(
-        schema_name="main", sequence_name="seq",
-        start_value=1, increment_by=1, min_value=1, max_value=100,
+        schema_name="main",
+        sequence_name="seq",
+        start_value=1,
+        increment_by=1,
+        min_value=1,
+        max_value=100,
     )
     s2 = SequenceInfo(
-        schema_name="main", sequence_name="seq",
-        start_value=10, increment_by=1, min_value=1, max_value=100,
+        schema_name="main",
+        sequence_name="seq",
+        start_value=10,
+        increment_by=1,
+        min_value=1,
+        max_value=100,
     )
     expected = make_snapshot(sequences=(s1,))
     actual = make_snapshot(sequences=(s2,))

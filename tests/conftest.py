@@ -21,12 +21,8 @@ def migrations_dir(tmp_path: Path) -> Path:
     """Temporary directory pre-populated with sample migration files."""
     d = tmp_path / "migrations"
     d.mkdir()
-    (d / "V1__create_users.sql").write_text(
-        "CREATE TABLE main.users (id INTEGER NOT NULL, name VARCHAR NOT NULL);"
-    )
-    (d / "V2__add_email.sql").write_text(
-        "ALTER TABLE main.users ADD COLUMN email VARCHAR;"
-    )
+    (d / "V1__create_users.sql").write_text("CREATE TABLE main.users (id INTEGER NOT NULL, name VARCHAR NOT NULL);")
+    (d / "V2__add_email.sql").write_text("ALTER TABLE main.users ADD COLUMN email VARCHAR;")
     (d / "R__create_active_view.sql").write_text(
         "CREATE OR REPLACE VIEW main.active_users AS SELECT * FROM main.users WHERE name IS NOT NULL;"
     )
@@ -44,6 +40,7 @@ def empty_migrations_dir(tmp_path: Path) -> Path:
 def history_table(conn: duckdb.DuckDBPyConnection) -> str:
     """Create the schema history table in memory (using 'memory' as catalog)."""
     from ducktracker.history.ducklake import DuckLakeHistoryManager
+
     table_name = "ducktracker_schema_history"
     DuckLakeHistoryManager().ensure_history_table(conn, "memory", "main", table_name)
     return table_name

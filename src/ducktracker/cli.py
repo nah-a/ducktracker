@@ -34,9 +34,7 @@ def _truncate(s: str, max_len: int = 12) -> str:
 @click.version_option(version=__version__, prog_name="ducktracker")
 @click.option("--config", "-c", type=click.Path(exists=True), default=None, help="Path to ducktracker.toml.")
 @click.option("--catalog", default=None, help="DuckLake catalog name (overrides config).")
-@click.option(
-    "--backend", default=None, type=click.Choice(["duckdb", "postgres"]), help="Catalog backend type."
-)
+@click.option("--backend", default=None, type=click.Choice(["duckdb", "postgres"]), help="Catalog backend type.")
 @click.option("--metadata", default=None, help="DuckDB metadata file path (for duckdb backend).")
 @click.option("--connection", default=None, help="PostgreSQL connection string (for postgres backend).")
 @click.option("--secrets-dir", default=None, help="Directory for DuckDB persistent secrets.")
@@ -153,14 +151,15 @@ def info(ctx: click.Context) -> None:
 
     for mf, record, state in statuses:
         version = (
-            str(mf.version) if mf and mf.version is not None
+            str(mf.version)
+            if mf and mf.version is not None
             else (str(record.version) if record and record.version else "-")
         )
         desc = mf.description if mf else (record.description if record else "?")
-        mtype = (mf.migration_type.value if mf else (record.migration_type if record else "?"))
+        mtype = mf.migration_type.value if mf else (record.migration_type if record else "?")
         style = state_styles.get(state, "white")
         applied_on = str(record.installed_on)[:19] if record else "-"
-        checksum = (_truncate(mf.checksum) if mf else (_truncate(record.checksum) if record else "-"))
+        checksum = _truncate(mf.checksum) if mf else (_truncate(record.checksum) if record else "-")
         table.add_row(version, desc, mtype, f"[{style}]{state.value}[/{style}]", applied_on, checksum)
 
     console.print(table)
@@ -183,8 +182,7 @@ def validate(ctx: click.Context) -> None:
     else:
         for m in mismatches:
             console.print(
-                f"[red]MISMATCH:[/red] {m.script} "
-                f"(applied: {_truncate(m.expected)}, file: {_truncate(m.actual)})"
+                f"[red]MISMATCH:[/red] {m.script} (applied: {_truncate(m.expected)}, file: {_truncate(m.actual)})"
             )
         console.print(f"\n[red]{len(mismatches)} checksum mismatch(es) found.[/red]")
         ctx.exit(1)

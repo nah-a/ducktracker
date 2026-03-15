@@ -1,4 +1,5 @@
 """Tests for DuckLakeIntrospector using in-memory DuckDB."""
+
 from __future__ import annotations
 
 import duckdb

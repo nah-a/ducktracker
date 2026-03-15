@@ -16,17 +16,16 @@ def test_connect_sets_secret_directory():
 
     config = DuckTrackerConfig(secret_directory="/my/secrets")
 
-    with mock_patch("duckdb.connect", return_value=conn_mock), \
-         mock_patch("ducktracker.connection._setup_extensions"), \
-         mock_patch("ducktracker.connection._attach_ducklake"):
+    with (
+        mock_patch("duckdb.connect", return_value=conn_mock),
+        mock_patch("ducktracker.connection._setup_extensions"),
+        mock_patch("ducktracker.connection._attach_ducklake"),
+    ):
         with connect(config):
             pass
 
     # SET secret_directory is now parameterized to avoid path injection
-    assert any(
-        args[0] == "SET secret_directory = ?" and args[1] == ["/my/secrets"]
-        for args in calls
-    )
+    assert any(args[0] == "SET secret_directory = ?" and args[1] == ["/my/secrets"] for args in calls)
 
 
 def test_connect_skips_secret_directory_when_empty():
@@ -36,9 +35,11 @@ def test_connect_skips_secret_directory_when_empty():
 
     config = DuckTrackerConfig()  # secret_directory defaults to ""
 
-    with mock_patch("duckdb.connect", return_value=conn_mock), \
-         mock_patch("ducktracker.connection._setup_extensions"), \
-         mock_patch("ducktracker.connection._attach_ducklake"):
+    with (
+        mock_patch("duckdb.connect", return_value=conn_mock),
+        mock_patch("ducktracker.connection._setup_extensions"),
+        mock_patch("ducktracker.connection._attach_ducklake"),
+    ):
         with connect(config):
             pass
 

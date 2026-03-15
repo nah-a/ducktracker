@@ -47,9 +47,9 @@ def _compare_schemas(
     exp_set, act_set = set(expected), set(actual)
 
     for name in sorted(act_set - exp_set):
-        items.append(DriftItem(
-            "schema", name, "added", None, name, f"Schema {name} exists in live but not in snapshot"
-        ))
+        items.append(
+            DriftItem("schema", name, "added", None, name, f"Schema {name} exists in live but not in snapshot")
+        )
 
     for name in sorted(exp_set - act_set):
         items.append(
@@ -126,9 +126,7 @@ def _compare_columns(table_fqn: str, expected: TableInfo, actual: TableInfo) -> 
 
         if diffs:
             detail = f"Column {table_fqn}.{name} changed: {'; '.join(diffs)}"
-            items.append(
-                DriftItem("column", f"{table_fqn}.{name}", "modified", str(ec), str(ac), detail)
-            )
+            items.append(DriftItem("column", f"{table_fqn}.{name}", "modified", str(ec), str(ac), detail))
 
     return items
 

@@ -69,20 +69,32 @@ def test_column_nullable_change():
 
 def test_column_default_changed():
     col_no_default = ColumnInfo(
-        name="id", data_type="INTEGER", is_nullable=False,
-        column_default=None, ordinal_position=1,
+        name="id",
+        data_type="INTEGER",
+        is_nullable=False,
+        column_default=None,
+        ordinal_position=1,
     )
     col_with_default = ColumnInfo(
-        name="id", data_type="INTEGER", is_nullable=False,
-        column_default="0", ordinal_position=1,
+        name="id",
+        data_type="INTEGER",
+        is_nullable=False,
+        column_default="0",
+        ordinal_position=1,
     )
     t_exp = TableInfo(
-        schema_name="main", table_name="t", columns=(col_no_default,),
-        primary_key=None, unique_constraints=(),
+        schema_name="main",
+        table_name="t",
+        columns=(col_no_default,),
+        primary_key=None,
+        unique_constraints=(),
     )
     t_act = TableInfo(
-        schema_name="main", table_name="t", columns=(col_with_default,),
-        primary_key=None, unique_constraints=(),
+        schema_name="main",
+        table_name="t",
+        columns=(col_with_default,),
+        primary_key=None,
+        unique_constraints=(),
     )
     report = detect_drift(make_snapshot(tables=(t_exp,)), make_snapshot(tables=(t_act,)), "test")
     assert report.has_drift
@@ -91,20 +103,32 @@ def test_column_default_changed():
 
 def test_column_ordinal_position_changed():
     col_pos1 = ColumnInfo(
-        name="id", data_type="INTEGER", is_nullable=False,
-        column_default=None, ordinal_position=1,
+        name="id",
+        data_type="INTEGER",
+        is_nullable=False,
+        column_default=None,
+        ordinal_position=1,
     )
     col_pos2 = ColumnInfo(
-        name="id", data_type="INTEGER", is_nullable=False,
-        column_default=None, ordinal_position=2,
+        name="id",
+        data_type="INTEGER",
+        is_nullable=False,
+        column_default=None,
+        ordinal_position=2,
     )
     t_exp = TableInfo(
-        schema_name="main", table_name="t", columns=(col_pos1,),
-        primary_key=None, unique_constraints=(),
+        schema_name="main",
+        table_name="t",
+        columns=(col_pos1,),
+        primary_key=None,
+        unique_constraints=(),
     )
     t_act = TableInfo(
-        schema_name="main", table_name="t", columns=(col_pos2,),
-        primary_key=None, unique_constraints=(),
+        schema_name="main",
+        table_name="t",
+        columns=(col_pos2,),
+        primary_key=None,
+        unique_constraints=(),
     )
     report = detect_drift(make_snapshot(tables=(t_exp,)), make_snapshot(tables=(t_act,)), "test")
     assert report.has_drift
