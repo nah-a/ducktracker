@@ -119,84 +119,13 @@ def apply_migrations(
             continue
 
         logger.info("Applying migration: %s", script_name)
-        start = time.monotonic()
-        success = True
+        success, elapsed_ms = _execute_migration(conn, mf, script_name)
 
-        conn.execute("BEGIN")
-        try:
-            for statement in _split_statements(mf.sql):
-                conn.execute(statement)
-        except Exception as e:
-            try:
-                conn.execute("ROLLBACK")
-            except Exception:
-                logger.error("ROLLBACK also failed for %s", script_name)
-            success = False
-            logger.error("Migration %s failed: %s", script_name, e)
+        success = _record_result(conn, config, history, mf, script_name, success, elapsed_ms)
 
-        elapsed_ms = int((time.monotonic() - start) * 1000)
-
-        if success:
-            # Record history INSIDE the transaction so it's atomic with the migration.
-            try:
-                history.record_migration(
-                    conn=conn,
-                    catalog=config.catalog_name,
-                    schema=config.target_schema,
-                    table=config.schema_history_table,
-                    version=mf.version,
-                    description=mf.description,
-                    migration_type=mf.migration_type.value,
-                    script=script_name,
-                    checksum=mf.checksum,
-                    execution_time_ms=elapsed_ms,
-                    success=True,
-                    snapshot_json=None,
-                )
-                conn.execute("COMMIT")
-            except Exception as e:
-                try:
-                    conn.execute("ROLLBACK")
-                except Exception:
-                    logger.error("ROLLBACK also failed for %s", script_name)
-                success = False
-                logger.error("Failed to record migration %s: %s", script_name, e)
-        else:
-            # Record failure outside transaction (already rolled back)
-            try:
-                history.record_migration(
-                    conn=conn,
-                    catalog=config.catalog_name,
-                    schema=config.target_schema,
-                    table=config.schema_history_table,
-                    version=mf.version,
-                    description=mf.description,
-                    migration_type=mf.migration_type.value,
-                    script=script_name,
-                    checksum=mf.checksum,
-                    execution_time_ms=elapsed_ms,
-                    success=False,
-                    snapshot_json=None,
-                )
-            except Exception as e:
-                logger.warning("Failed to record failure for %s: %s", script_name, e)
-
-        # Capture schema snapshot after commit, only on last successful migration.
+        # Capture snapshot after commit so introspection sees all applied changes.
         if success and is_last:
-            try:
-                exclude = frozenset({config.schema_history_table})
-                snapshot = introspector.introspect(conn, config.catalog_name, exclude_tables=exclude)
-                snapshot_json = snapshot.to_json()
-                # Update the history record with the snapshot
-                history.update_latest_snapshot(
-                    conn=conn,
-                    catalog=config.catalog_name,
-                    schema=config.target_schema,
-                    table=config.schema_history_table,
-                    snapshot_json=snapshot_json,
-                )
-            except Exception as e:
-                logger.warning("Failed to capture schema snapshot: %s", e)
+            _capture_snapshot(conn, config, introspector, history)
 
         results.append((mf, success, elapsed_ms))
 
@@ -204,6 +133,128 @@ def apply_migrations(
             break
 
     return results
+
+
+def _execute_migration(
+    conn: duckdb.DuckDBPyConnection,
+    mf: MigrationFile,
+    script_name: str,
+) -> tuple[bool, int]:
+    """Execute a single migration's SQL within a transaction.
+
+    Returns (success, elapsed_ms). On failure the transaction is rolled back.
+    """
+    start = time.monotonic()
+    conn.execute("BEGIN")
+    try:
+        for statement in _split_statements(mf.sql):
+            conn.execute(statement)
+    except duckdb.Error as e:
+        try:
+            conn.execute("ROLLBACK")
+        except duckdb.Error:
+            logger.error("ROLLBACK also failed for %s", script_name)
+        logger.error("Migration %s failed: %s", script_name, e)
+        return False, int((time.monotonic() - start) * 1000)
+    return True, int((time.monotonic() - start) * 1000)
+
+
+def _record_result(
+    conn: duckdb.DuckDBPyConnection,
+    config: DuckTrackerConfig,
+    history: HistoryManagerBase,
+    mf: MigrationFile,
+    script_name: str,
+    success: bool,
+    elapsed_ms: int,
+) -> bool:
+    """Record migration result in history. Returns final success state.
+
+    On success, commits the transaction atomically with the history record.
+    On failure, records outside the (already rolled-back) transaction.
+    """
+    if success:
+        try:
+            history.record_migration(
+                conn=conn,
+                catalog=config.catalog_name,
+                schema=config.target_schema,
+                table=config.schema_history_table,
+                version=mf.version,
+                description=mf.description,
+                migration_type=mf.migration_type.value,
+                script=script_name,
+                checksum=mf.checksum,
+                execution_time_ms=elapsed_ms,
+                success=True,
+                snapshot_json=None,
+            )
+            conn.execute("COMMIT")
+        except duckdb.Error as e:
+            try:
+                conn.execute("ROLLBACK")
+            except duckdb.Error:
+                logger.error("ROLLBACK also failed for %s", script_name)
+            logger.error("Failed to record migration %s: %s", script_name, e)
+            return False
+    else:
+        try:
+            history.record_migration(
+                conn=conn,
+                catalog=config.catalog_name,
+                schema=config.target_schema,
+                table=config.schema_history_table,
+                version=mf.version,
+                description=mf.description,
+                migration_type=mf.migration_type.value,
+                script=script_name,
+                checksum=mf.checksum,
+                execution_time_ms=elapsed_ms,
+                success=False,
+                snapshot_json=None,
+            )
+        except duckdb.Error as e:
+            logger.warning("Failed to record failure for %s: %s", script_name, e)
+    return success
+
+
+def _capture_snapshot(
+    conn: duckdb.DuckDBPyConnection,
+    config: DuckTrackerConfig,
+    introspector: IntrospectorBase,
+    history: HistoryManagerBase,
+) -> None:
+    """Capture schema snapshot after commit and insert as a dedicated history record.
+
+    Uses INSERT (not UPDATE) to avoid DuckLake parquet storage issues with
+    UPDATE of large VARCHAR values in some DuckDB versions.
+    """
+    try:
+        exclude = frozenset({config.schema_history_table})
+        snapshot = introspector.introspect(conn, config.catalog_name, exclude_tables=exclude)
+        snapshot_json = snapshot.to_json()
+        conn.execute("BEGIN")
+        history.record_migration(
+            conn=conn,
+            catalog=config.catalog_name,
+            schema=config.target_schema,
+            table=config.schema_history_table,
+            version=None,
+            description="schema snapshot",
+            migration_type="S",
+            script="<< Snapshot >>",
+            checksum="snapshot",
+            execution_time_ms=0,
+            success=True,
+            snapshot_json=snapshot_json,
+        )
+        conn.execute("COMMIT")
+    except Exception as e:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        logger.warning("Failed to capture schema snapshot: %s", e)
 
 
 def validate_checksums(

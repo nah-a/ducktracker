@@ -13,11 +13,6 @@ from ducktracker.introspection.ducklake import DuckLakeIntrospector
 
 
 @pytest.fixture
-def mgr() -> DuckLakeHistoryManager:
-    return DuckLakeHistoryManager()
-
-
-@pytest.fixture
 def introspector() -> DuckLakeIntrospector:
     return DuckLakeIntrospector()
 

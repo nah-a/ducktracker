@@ -21,7 +21,12 @@ def test_apply_migrations_success(setup_conn, cfg, introspector, mgr):
 def test_apply_migrations_dry_run(setup_conn, cfg, introspector, mgr):
     discovered = discover(cfg.migrations_dir)
     results = apply_migrations(
-        setup_conn, cfg, discovered, introspector=introspector, history=mgr, dry_run=True,
+        setup_conn,
+        cfg,
+        discovered,
+        introspector=introspector,
+        history=mgr,
+        dry_run=True,
     )
     assert len(results) == 3
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", cfg.schema_history_table)
@@ -32,13 +37,12 @@ def test_apply_migrations_rolls_back_on_failure(setup_conn, introspector, mgr, t
     """A failing migration is rolled back -- no partial table creation survives."""
     d = tmp_path / "fail_migs"
     d.mkdir()
-    (d / "V1__partial.sql").write_text(
-        "CREATE TABLE main.rollback_test (id INTEGER);\n"
-        "THIS IS NOT VALID SQL;"
-    )
+    (d / "V1__partial.sql").write_text("CREATE TABLE main.rollback_test (id INTEGER);\nTHIS IS NOT VALID SQL;")
     fail_cfg = DuckTrackerConfig(
-        catalog_name="memory", migrations_dir=str(d),
-        target_schema="main", schema_history_table="ducktracker_schema_history",
+        catalog_name="memory",
+        migrations_dir=str(d),
+        target_schema="main",
+        schema_history_table="ducktracker_schema_history",
     )
     results = apply_migrations(setup_conn, fail_cfg, discover(d), introspector=introspector, history=mgr)
     assert results[0][1] is False
@@ -54,8 +58,10 @@ def test_apply_migrations_records_failure_in_history(setup_conn, introspector, m
     d.mkdir()
     (d / "V1__bad.sql").write_text("NOT VALID SQL;")
     fail_cfg = DuckTrackerConfig(
-        catalog_name="memory", migrations_dir=str(d),
-        target_schema="main", schema_history_table="ducktracker_schema_history",
+        catalog_name="memory",
+        migrations_dir=str(d),
+        target_schema="main",
+        schema_history_table="ducktracker_schema_history",
     )
     apply_migrations(setup_conn, fail_cfg, discover(d), introspector=introspector, history=mgr)
     applied = mgr.get_applied_migrations(setup_conn, "memory", "main", "ducktracker_schema_history")
@@ -77,7 +83,11 @@ def test_apply_migrations_snapshot_failure_is_warned(setup_conn, cfg, mgr, caplo
     discovered = discover(cfg.migrations_dir)
     with caplog.at_level(logging.WARNING, logger="ducktracker.migrator"):
         results = apply_migrations(
-            setup_conn, cfg, [discovered[0]], introspector=bad_introspector, history=mgr,
+            setup_conn,
+            cfg,
+            [discovered[0]],
+            introspector=bad_introspector,
+            history=mgr,
         )
 
     assert results[0][1] is True

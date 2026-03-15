@@ -1,4 +1,5 @@
 """DuckLake catalog introspection using DuckDB catalog views."""
+
 from __future__ import annotations
 
 import logging
@@ -46,16 +47,13 @@ class DuckLakeIntrospector(IntrospectorBase):
     def _get_schemas(self, conn: duckdb.DuckDBPyConnection, catalog: str) -> tuple[str, ...]:
         try:
             rows = conn.execute(
-                "SELECT schema_name FROM information_schema.schemata "
-                "WHERE catalog_name = ?",
+                "SELECT schema_name FROM information_schema.schemata WHERE catalog_name = ?",
                 [catalog],
             ).fetchall()
         except duckdb.Error:
             logger.warning("Could not query schemata for catalog %s", catalog)
             return ()
-        return tuple(
-            row[0] for row in rows if row[0] not in _SYSTEM_SCHEMAS
-        )
+        return tuple(row[0] for row in rows if row[0] not in _SYSTEM_SCHEMAS)
 
     def _get_tables(
         self,

@@ -1,4 +1,5 @@
 """Factory functions to select the right backend implementations from config."""
+
 from __future__ import annotations
 
 from ducktracker.config import DuckTrackerConfig

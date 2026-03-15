@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from ducktracker.models import (
@@ -39,6 +40,56 @@ def detect_drift(
     )
 
 
+def _compare_entities[T](
+    entity_type: str,
+    expected: tuple[T, ...],
+    actual: tuple[T, ...],
+    key_fn: Callable[[T], tuple[str, ...]],
+    detail_fn: Callable[[str, T, T], list[DriftItem]] | None = None,
+) -> list[DriftItem]:
+    """Generic set-diff comparison for named schema entities.
+
+    Detects added/removed entities and optionally delegates to detail_fn
+    for modified-entity comparison on the intersection.
+    """
+    items: list[DriftItem] = []
+    exp_map = {key_fn(e): e for e in expected}
+    act_map = {key_fn(a): a for a in actual}
+
+    for key in sorted(set(act_map) - set(exp_map)):
+        fqn = ".".join(key)
+        items.append(
+            DriftItem(
+                entity_type,
+                fqn,
+                "added",
+                None,
+                fqn,
+                f"{entity_type.title()} {fqn} exists in live but not in snapshot",
+            )
+        )
+
+    for key in sorted(set(exp_map) - set(act_map)):
+        fqn = ".".join(key)
+        items.append(
+            DriftItem(
+                entity_type,
+                fqn,
+                "removed",
+                fqn,
+                None,
+                f"{entity_type.title()} {fqn} exists in snapshot but not in live",
+            )
+        )
+
+    if detail_fn:
+        for key in sorted(set(exp_map) & set(act_map)):
+            fqn = ".".join(key)
+            items.extend(detail_fn(fqn, exp_map[key], act_map[key]))
+
+    return items
+
+
 def _compare_schemas(
     expected: tuple[str, ...],
     actual: tuple[str, ...],
@@ -47,9 +98,9 @@ def _compare_schemas(
     exp_set, act_set = set(expected), set(actual)
 
     for name in sorted(act_set - exp_set):
-        items.append(DriftItem(
-            "schema", name, "added", None, name, f"Schema {name} exists in live but not in snapshot"
-        ))
+        items.append(
+            DriftItem("schema", name, "added", None, name, f"Schema {name} exists in live but not in snapshot")
+        )
 
     for name in sorted(exp_set - act_set):
         items.append(
@@ -59,26 +110,15 @@ def _compare_schemas(
     return items
 
 
+def _table_key(t: TableInfo) -> tuple[str, ...]:
+    return (t.schema_name, t.table_name)
+
+
 def _compare_tables(
     expected: tuple[TableInfo, ...],
     actual: tuple[TableInfo, ...],
 ) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(t.schema_name, t.table_name): t for t in expected}
-    act_map = {(t.schema_name, t.table_name): t for t in actual}
-
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("table", fqn, "added", None, fqn, f"Table {fqn} exists in live but not in snapshot"))
-
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("table", fqn, "removed", fqn, None, f"Table {fqn} exists in snapshot but not in live"))
-
-    for key in sorted(set(exp_map) & set(act_map)):
-        items.extend(_compare_columns(f"{key[0]}.{key[1]}", exp_map[key], act_map[key]))
-
-    return items
+    return _compare_entities("table", expected, actual, _table_key, _compare_columns)
 
 
 def _compare_columns(table_fqn: str, expected: TableInfo, actual: TableInfo) -> list[DriftItem]:
@@ -126,127 +166,97 @@ def _compare_columns(table_fqn: str, expected: TableInfo, actual: TableInfo) -> 
 
         if diffs:
             detail = f"Column {table_fqn}.{name} changed: {'; '.join(diffs)}"
-            items.append(
-                DriftItem("column", f"{table_fqn}.{name}", "modified", str(ec), str(ac), detail)
-            )
+            items.append(DriftItem("column", f"{table_fqn}.{name}", "modified", str(ec), str(ac), detail))
 
     return items
+
+
+def _view_key(v: ViewInfo) -> tuple[str, ...]:
+    return (v.schema_name, v.view_name)
+
+
+def _compare_view_details(fqn: str, exp: ViewInfo, act: ViewInfo) -> list[DriftItem]:
+    exp_def = _normalize_whitespace(exp.sql_definition)
+    act_def = _normalize_whitespace(act.sql_definition)
+    if exp_def != act_def:
+        return [
+            DriftItem(
+                "view",
+                fqn,
+                "modified",
+                exp.sql_definition,
+                act.sql_definition,
+                f"View {fqn} definition changed",
+            )
+        ]
+    return []
 
 
 def _compare_views(
     expected: tuple[ViewInfo, ...],
     actual: tuple[ViewInfo, ...],
 ) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(v.schema_name, v.view_name): v for v in expected}
-    act_map = {(v.schema_name, v.view_name): v for v in actual}
+    return _compare_entities("view", expected, actual, _view_key, _compare_view_details)
 
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("view", fqn, "added", None, fqn, f"View {fqn} exists in live but not in snapshot"))
 
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("view", fqn, "removed", fqn, None, f"View {fqn} exists in snapshot but not in live"))
-
-    for key in sorted(set(exp_map) & set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        exp_def = _normalize_whitespace(exp_map[key].sql_definition)
-        act_def = _normalize_whitespace(act_map[key].sql_definition)
-        if exp_def != act_def:
-            items.append(
-                DriftItem(
-                    "view",
-                    fqn,
-                    "modified",
-                    exp_map[key].sql_definition,
-                    act_map[key].sql_definition,
-                    f"View {fqn} definition changed",
-                )
-            )
-
-    return items
+def _index_key(i: IndexInfo) -> tuple[str, ...]:
+    return (i.schema_name, i.index_name)
 
 
 def _compare_indexes(
     expected: tuple[IndexInfo, ...],
     actual: tuple[IndexInfo, ...],
 ) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(i.schema_name, i.index_name): i for i in expected}
-    act_map = {(i.schema_name, i.index_name): i for i in actual}
+    return _compare_entities("index", expected, actual, _index_key)
 
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("index", fqn, "added", None, fqn, f"Index {fqn} exists in live but not in snapshot"))
 
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("index", fqn, "removed", fqn, None, f"Index {fqn} exists in snapshot but not in live"))
+def _sequence_key(s: SequenceInfo) -> tuple[str, ...]:
+    return (s.schema_name, s.sequence_name)
 
-    return items
+
+def _compare_sequence_details(fqn: str, exp: SequenceInfo, act: SequenceInfo) -> list[DriftItem]:
+    diffs: list[str] = []
+    if exp.start_value != act.start_value:
+        diffs.append(f"start: {exp.start_value} -> {act.start_value}")
+    if exp.increment_by != act.increment_by:
+        diffs.append(f"increment: {exp.increment_by} -> {act.increment_by}")
+    if diffs:
+        detail = f"Sequence {fqn}: {'; '.join(diffs)}"
+        return [DriftItem("sequence", fqn, "modified", str(exp), str(act), detail)]
+    return []
 
 
 def _compare_sequences(
     expected: tuple[SequenceInfo, ...],
     actual: tuple[SequenceInfo, ...],
 ) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(s.schema_name, s.sequence_name): s for s in expected}
-    act_map = {(s.schema_name, s.sequence_name): s for s in actual}
+    return _compare_entities("sequence", expected, actual, _sequence_key, _compare_sequence_details)
 
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(
-            DriftItem("sequence", fqn, "added", None, fqn, f"Sequence {fqn} exists in live but not in snapshot")
-        )
 
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(
-            DriftItem("sequence", fqn, "removed", fqn, None, f"Sequence {fqn} exists in snapshot but not in live")
-        )
+def _macro_key(m: MacroInfo) -> tuple[str, ...]:
+    return (m.schema_name, m.macro_name)
 
-    for key in sorted(set(exp_map) & set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        es, as_ = exp_map[key], act_map[key]
-        diffs: list[str] = []
-        if es.start_value != as_.start_value:
-            diffs.append(f"start: {es.start_value} -> {as_.start_value}")
-        if es.increment_by != as_.increment_by:
-            diffs.append(f"increment: {es.increment_by} -> {as_.increment_by}")
-        if diffs:
-            detail = f"Sequence {fqn}: {'; '.join(diffs)}"
-            items.append(DriftItem("sequence", fqn, "modified", str(es), str(as_), detail))
 
-    return items
+def _compare_macro_details(fqn: str, exp: MacroInfo, act: MacroInfo) -> list[DriftItem]:
+    if _normalize_whitespace(exp.definition) != _normalize_whitespace(act.definition):
+        return [
+            DriftItem(
+                "macro",
+                fqn,
+                "modified",
+                exp.definition,
+                act.definition,
+                f"Macro {fqn} definition changed",
+            )
+        ]
+    return []
 
 
 def _compare_macros(
     expected: tuple[MacroInfo, ...],
     actual: tuple[MacroInfo, ...],
 ) -> list[DriftItem]:
-    items: list[DriftItem] = []
-    exp_map = {(m.schema_name, m.macro_name): m for m in expected}
-    act_map = {(m.schema_name, m.macro_name): m for m in actual}
-
-    for key in sorted(set(act_map) - set(exp_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("macro", fqn, "added", None, fqn, f"Macro {fqn} exists in live but not in snapshot"))
-
-    for key in sorted(set(exp_map) - set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        items.append(DriftItem("macro", fqn, "removed", fqn, None, f"Macro {fqn} exists in snapshot but not in live"))
-
-    for key in sorted(set(exp_map) & set(act_map)):
-        fqn = f"{key[0]}.{key[1]}"
-        em, am = exp_map[key], act_map[key]
-        if _normalize_whitespace(em.definition) != _normalize_whitespace(am.definition):
-            items.append(
-                DriftItem("macro", fqn, "modified", em.definition, am.definition, f"Macro {fqn} definition changed")
-            )
-
-    return items
+    return _compare_entities("macro", expected, actual, _macro_key, _compare_macro_details)
 
 
 def _normalize_whitespace(s: str) -> str:
